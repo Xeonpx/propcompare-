@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="PropCompare"/>
+<title>PropCompare — Property Analysis</title>
+
+<script>
+const manifestData = {
+  name: "PropCompare — Property Analysis",
+  short_name: "PropCompare",
+  description: "Internal property project comparison and analysis tool",
+  start_url: ".",
+  display: "standalone",
+  background_color: "#0a0a0a",
+  theme_color: "#c9a227",
+  icons: [{ src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230a0a0a'/><text y='.9em' font-size='80' x='10'>🏗</text></svg>", sizes: "any", type: "image/svg+xml" }]
+};
+const blob = new Blob([JSON.stringify(manifestData)], { type: "application/json" });
+const manifestURL = URL.createObjectURL(blob);
+const link = document.createElement("link");
+link.rel = "manifest";
+link.href = manifestURL;
+document.head.appendChild(link);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #c9a227;
+    --gold-dim: #7a5c00;
+    --gold-light: #f0c84a;
+    --bg: #080808;
+    --bg1: #0e0e0e;
+    --bg2: #141414;
+    --bg3: #1a1a1a;
+    --bg4: #222;
+    --border: #1e1e1e;
+    --border2: #2a2a2a;
+    --text: #e8e8e8;
+    --text2: #aaa;
+    --text3: #666;
+    --text4: #444;
+    --green: #4caf7a;
+    --green-dim: #1a3a28;
+    --green-bright: #6fcf97;
+    --red: #ff6b6b;
+    --red-dim: #2a1010;
+    --blue: #7b9fff;
+    --blue-dim: #1a1a35;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg1); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+  input, textarea, select {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  input::placeholder, textarea::placeholder { color: var(--text4); }
+  button { font-family: 'Syne', sans-serif; cursor: pointer; border: none; outline: none; transition: all 0.15s; }
+  button:active { transform: scale(0.97); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .fade-up { animation: fadeUp 0.3s ease both; }
+  .btn-gold {
+    background: var(--gold);
+    color: #000;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+  }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 5px;
+  }
+  .btn-ghost:hover { border-color: var(--text3); color: var(--text2); }
+  .btn-green {
+    background: var(--green-dim);
+    border: 1px solid #2d5a40;
+    color: var(--green-bright);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 5px;
+  }
+  .btn-green:hover { border-color: var(--green); }
+  .btn-red {
+    background: var(--red-dim);
+    border: 1px solid #4a1818;
+    color: var(--red);
+    font-size: 12px;
+    padding: 8px 14px;
+    border-radius: 5px;
+  }
+  .btn-red:hover { border-color: var(--red); }
+  .section-card {
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .field-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+  #install-banner {
+    position: fixed; bottom: 80px; right: 20px; z-index: 8000;
+    background: var(--bg2); border: 1px solid var(--gold);
+    border-radius: 10px; padding: 14px 18px; max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    animation: fadeUp 0.4s ease;
+  }
+  #install-banner h4 { font-size: 13px; color: var(--gold); margin-bottom: 4px; }
+  #install-banner p { font-size: 11px; color: var(--text3); margin-bottom: 12px; line-height: 1.5; }
+  #install-banner .actions { display: flex; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+<div id="install-banner" style="display:none">
+  <h4>📲 Install PropCompare</h4>
+  <p>Install this app to your device for offline access. Works like a native app.</p>
+  <div class="actions">
+    <button class="btn-gold" id="install-btn" style="font-size:11px;padding:7px 14px;">Install App</button>
+    <button class="btn-ghost" id="install-dismiss" style="font-size:11px;padding:7px 12px;">Later</button>
+  </div>
+</div>
+
+<script>
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+const _React = React,
+  useState = _React.useState,
+  useRef = _React.useRef,
+  useEffect = _React.useEffect,
+  useCallback = _React.useCallback;
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+const toBase64 = file => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result);
+  r.onerror = rej;
+  r.readAsDataURL(file);
+});
+const fmt = n => Number(n).toLocaleString("en-MY");
+const fmtRM = n => n ? "RM " + fmt(n) : "—";
+const STORAGE_KEY = "propcompare_v2_data";
+const save = data => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {} };
+const load = () => { try { const d = localStorage.getItem(STORAGE_KEY); return d ? JSON.parse(d) : []; } catch (e) { return []; } };
+const EMPTY_LAYOUT = { id: "", name: "", beds: "", baths: "", sizeSqft: "", grossPrice: "", netPrice: "", psf: "" };
+const EMPTY_PROJECT = { id: "", name: "", developer: "", location: "", district: "", state: "", nearestCity: "", distanceFromCity: "", launchDate: "", completionDate: "", tenure: "Freehold", bumiDiscount: "", cashBack: false, cashBackDetails: "", maintenanceFee: "", carParks: "", totalUnits: "", floors: "", layouts: [], images: [], pdfSources: [], notes: "", createdAt: "", updatedAt: "" };
+
+/* ── KEY CHANGE: calls our Netlify proxy instead of Anthropic directly ── */
+async function extractFromPDF(base64Data) {
+  const prompt = `You are a Malaysian real estate data extractor. Extract structured property project information from this PDF.
+Return ONLY a raw JSON object — no markdown, no code fences, no explanation.
+{
+  "name": "Project Name",
+  "developer": "Developer Name",
+  "location": "Full address",
+  "district": "District e.g. Petaling Jaya",
+  "state": "State e.g. Selangor",
+  "nearestCity": "Nearest city or LRT station",
+  "distanceFromCity": "e.g. 3.5 km",
+  "launchDate": "Month YYYY",
+  "completionDate": "Q1 YYYY or Month YYYY",
+  "tenure": "Freehold or Leasehold",
+  "bumiDiscount": "e.g. 5% or empty",
+  "cashBack": true,
+  "cashBackDetails": "details or empty",
+  "maintenanceFee": "e.g. RM 0.35/sf or empty",
+  "carParks": "e.g. 2 or empty",
+  "totalUnits": "e.g. 350 or empty",
+  "floors": "e.g. 28 or empty",
+  "layouts": [
+    { "name": "A1", "beds": "2", "baths": "2", "sizeSqft": "900", "grossPrice": "500000", "netPrice": "450000", "psf": "500" }
+  ],
+  "notes": "any other relevant notes"
+}
+Rules:
+- Extract EVERY distinct layout/unit type separately.
+- netPrice = stated nett price. If not stated, use 90% of grossPrice.
+- psf = round(netPrice / sizeSqft).
+- All numeric values as plain strings without commas or currency symbols.
+- Unknown/missing fields: empty string. Boolean cashBack: true/false.`;
+
+  const resp = await fetch("/api/claude", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 4096,
+      messages: [{
+        role: "user",
+        content: [{
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: base64Data.split(",")[1] }
+        }, {
+          type: "text",
+          text: prompt
+        }]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  const text = data.content.map(b => b.text || "").join("").replace(/```json|```/g, "").trim();
+  return JSON.parse(text);
+}
+
+function buildReportHTML(projects) {
+  const now = new Date().toLocaleDateString("en-MY", { year: "numeric", month: "long", day: "numeric" });
+  const projectsHTML = projects.map((p, idx) => {
+    var _p$images;
+    const grouped = {};
+    (p.layouts || []).forEach(l => { const k = l.beds || "?"; if (!grouped[k]) grouped[k] = []; grouped[k].push(l); });
+    const layoutRows = Object.keys(grouped).sort((a, b) => Number(a) - Number(b)).map(beds => {
+      const grp = grouped[beds];
+      const header = `<tr><td colspan="7" style="background:#0f1f0f;color:#4caf7a;font-size:10px;font-weight:700;padding:8px 14px;letter-spacing:1px;text-transform:uppercase;">🛏 ${beds} Bedroom${beds !== "1" ? "s" : ""} — ${grp.length} Type${grp.length > 1 ? "s" : ""}</td></tr>`;
+      const rows = grp.map((l, ri) => `<tr style="background:${ri % 2 === 0 ? "#0e0e0e" : "#111"}">
+        <td style="padding:8px 14px;font-weight:700;color:#f0f0f0;font-family:monospace;font-size:11px;border-bottom:1px solid #1a1a1a;">${l.name || "—"}</td>
+        <td style="padding:8px 10px;text-align:center;color:#aaa;border-bottom:1px solid #1a1a1a;">${l.beds || "—"}</td>
+        <td style="padding:8px 10px;text-align:center;color:#aaa;border-bottom:1px solid #1a1a1a;">${l.baths || "—"}</td>
+        <td style="padding:8px 10px;text-align:right;color:#aaa;font-family:monospace;border-bottom:1px solid #1a1a1a;">${l.sizeSqft ? fmt(l.sizeSqft) + " sf" : "—"}</td>
+        <td style="padding:8px 10px;text-align:right;color:#f0c84a;font-weight:700;background:#1a1800;font-family:monospace;border-bottom:1px solid #1a1a1a;">${l.grossPrice ? fmtRM(l.grossPrice) : "—"}</td>
+        <td style="padding:8px 10px;text-align:right;color:#6fcf97;font-weight:700;background:#0a1a0a;font-family:monospace;border-bottom:1px solid #1a1a1a;">${l.netPrice ? fmtRM(l.netPrice) : "—"}</td>
+        <td style="padding:8px 10px;text-align:right;color:#777;font-family:monospace;border-bottom:1px solid #1a1a1a;">${l.psf ? "RM " + fmt(l.psf) : "—"}</td>
+      </tr>`).join("");
+      return header + rows;
+    }).join("");
+    const imagesHTML = (_p$images = p.images) !== null && _p$images !== void 0 && _p$images.length ? `
+      <div style="padding:18px 20px;background:#0a0a0a;border-top:1px solid #1a1a1a;">
+        <div style="font-size:9px;letter-spacing:2px;color:#c9a227;text-transform:uppercase;font-weight:700;margin-bottom:10px;">Project Images</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          ${p.images.slice(0, 8).map(img => `<img src="${img.base64}" style="width:100%;height:90px;object-fit:cover;border-radius:5px;border:1px solid #1e1e1e;"/>`).join("")}
+        </div>
+      </div>` : "";
+    const nets = (p.layouts || []).filter(l => l.netPrice).map(l => Number(l.netPrice));
+    const minN = nets.length ? Math.min(...nets) : null;
+    const maxN = nets.length ? Math.max(...nets) : null;
+    const priceRange = minN ? minN === maxN ? fmtRM(minN) : `${fmtRM(minN)} – ${fmtRM(maxN)}` : "TBC";
+    const infoItems = [["📍 Location", p.location || "—"], ["🏙 Nearest Centre", [p.nearestCity, p.distanceFromCity].filter(Boolean).join(" · ") || "—"], ["📅 Launch Date", p.launchDate || "—"], ["🏗 Completion", p.completionDate || "—"], ["🔑 Tenure", p.tenure || "—"], ["🏢 Total Units", p.totalUnits ? `${fmt(p.totalUnits)} units` : "—"], ["🅿 Car Parks", p.carParks || "—"], ["🔧 Maintenance", p.maintenanceFee || "—"], ["🇲🇾 Bumi Discount", p.bumiDiscount || "—"], ["💰 Cash Back", p.cashBack ? p.cashBackDetails || "Yes" : "No"], ["📊 Floors", p.floors || "—"], ["📐 District / State", [p.district, p.state].filter(Boolean).join(", ") || "—"]];
+    return `
+    <div style="margin-bottom:40px;border:1px solid #1e1e1e;border-radius:10px;overflow:hidden;page-break-inside:avoid;">
+      <div style="background:#0d0d0d;padding:20px 24px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #1a1a1a;">
+        <div>
+          <div style="font-size:9px;letter-spacing:3px;color:#c9a227;text-transform:uppercase;margin-bottom:4px;font-family:'Courier New',monospace;">Project ${String(idx + 1).padStart(2, "0")}</div>
+          <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">${p.name || "Unnamed"}</div>
+          <div style="font-size:12px;color:#666;margin-top:3px;">${p.developer || ""}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Est. Net From</div>
+          <div style="font-size:18px;font-weight:700;color:#6fcf97;font-family:'Courier New',monospace;">${priceRange}</div>
+          <div style="margin-top:6px;${p.cashBack ? "background:#0f1f0f;border:1px solid #2d5a40;color:#6fcf97;" : "background:#111;border:1px solid #1e1e1e;color:#444;"}display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;">${p.cashBack ? "✓ Cash Back" : "No Cash Back"}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);background:#0a0a0a;border-bottom:1px solid #1a1a1a;">
+        ${infoItems.map(([label, val]) => `<div style="padding:11px 16px;border-right:1px solid #141414;border-bottom:1px solid #141414;"><div style="font-size:9px;color:#444;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">${label}</div><div style="font-size:11px;color:#ccc;font-weight:600;">${val}</div></div>`).join("")}
+      </div>
+      <div style="padding:18px 20px;background:#0e0e0e;">
+        <div style="font-size:9px;letter-spacing:2px;color:#c9a227;text-transform:uppercase;font-weight:700;margin-bottom:12px;">Unit Layouts & Pricing</div>
+        <table style="width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;border:1px solid #1a1a1a;border-radius:6px;overflow:hidden;">
+          <thead><tr style="background:#141414;">
+            <th style="padding:9px 14px;text-align:left;color:#777;font-size:9px;text-transform:uppercase;letter-spacing:1px;">Type</th>
+            <th style="padding:9px 10px;text-align:center;color:#777;font-size:9px;text-transform:uppercase;">Bed</th>
+            <th style="padding:9px 10px;text-align:center;color:#777;font-size:9px;text-transform:uppercase;">Bath</th>
+            <th style="padding:9px 10px;text-align:right;color:#777;font-size:9px;text-transform:uppercase;">Size</th>
+            <th style="padding:9px 10px;text-align:right;color:#f0c84a;font-size:9px;text-transform:uppercase;">⚠ Gross</th>
+            <th style="padding:9px 10px;text-align:right;color:#6fcf97;font-size:9px;text-transform:uppercase;">✓ Net</th>
+            <th style="padding:9px 10px;text-align:right;color:#777;font-size:9px;text-transform:uppercase;">PSF</th>
+          </tr></thead>
+          <tbody>${layoutRows}</tbody>
+        </table>
+        <div style="margin-top:8px;font-size:9px;color:#333;font-family:'Courier New',monospace;">⚠ Gross = pre-discount price &nbsp;|&nbsp; ✓ Net ≈ buyer effective price &nbsp;|&nbsp; PSF = Net ÷ Built-up sf</div>
+      </div>
+      ${imagesHTML}
+      ${p.notes ? `<div style="padding:12px 20px;background:#090909;border-top:1px solid #141414;font-size:10px;color:#555;font-family:'Courier New',monospace;"><span style="color:#333;">NOTES:</span> ${p.notes}</div>` : ""}
+    </div>`;
+  }).join("");
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>PropCompare — ${now}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #080808; color: #e8e8e8; font-family: 'Syne', 'Segoe UI', sans-serif; padding: 32px; max-width: 1000px; margin: 0 auto; }
+  .no-print { margin-bottom: 28px; padding: 16px 20px; background: #0e0e0e; border: 1px solid #1e1e1e; border-radius: 8px; display: flex; align-items: center; gap: 16px; }
+  @media print { .no-print { display: none !important; } body { max-width: 100%; padding: 16px; } }
+</style>
+</head>
+<body>
+<div class="no-print">
+  <button onclick="window.print()" style="background:#c9a227;border:none;color:#000;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;padding:11px 28px;border-radius:5px;cursor:pointer;">🖨 Print / Save as PDF</button>
+  <div style="font-size:11px;color:#444;">Print dialog → Destination: <b style="color:#888">Save as PDF</b> · Layout: Portrait · Enable background graphics for best output</div>
+</div>
+<div style="text-align:center;padding-bottom:28px;margin-bottom:36px;border-bottom:1px solid #1a1a1a;">
+  <div style="font-size:9px;letter-spacing:4px;color:#c9a227;text-transform:uppercase;margin-bottom:8px;">Internal Use Only</div>
+  <div style="font-size:32px;font-weight:800;color:#fff;letter-spacing:-1px;">PropCompare</div>
+  <div style="font-size:13px;color:#444;margin-top:4px;">Property Analysis Report · ${now}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:18px;">
+    ${projects.map((p, i) => `<span style="background:#111;border:1px solid #c9a227;border-radius:4px;padding:4px 14px;font-size:10px;font-weight:700;color:#c9a227;letter-spacing:0.5px;">${String(i + 1).padStart(2, "0")}. ${p.name || "Unnamed"}</span>`).join("")}
+  </div>
+</div>
+${projectsHTML}
+<div style="margin-top:36px;border-top:1px solid #141414;padding-top:18px;text-align:center;font-size:9px;color:#2a2a2a;letter-spacing:0.5px;line-height:2;font-family:'Courier New',monospace;">
+DISCLAIMER: ESTIMATES ONLY — NOT FOR DISTRIBUTION — INTERNAL USE ONLY<br/>
+Generated ${now} · PropCompare Internal Property Analysis System
+</div>
+</body>
+</html>`;
+}
+
+function Toggle({value, onChange, label, activeLabel}) {
+  return React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }, onClick: () => onChange(!value) },
+    React.createElement("div", { style: { width: 40, height: 22, background: value ? "#1a3a28" : "#1a1a1a", border: `1px solid ${value ? "#2d5a40" : "#2a2a2a"}`, borderRadius: 11, position: "relative", transition: "all 0.2s", flexShrink: 0 } },
+      React.createElement("div", { style: { width: 16, height: 16, background: value ? "var(--green-bright)" : "#444", borderRadius: "50%", position: "absolute", top: 2, left: value ? 20 : 2, transition: "left 0.2s" } })
+    ),
+    React.createElement("span", { style: { fontSize: 12, color: value ? "var(--green-bright)" : "var(--text3)", transition: "color 0.2s" } }, value ? activeLabel || label : label)
+  );
+}
+
+function LayoutRow({layout, onChange, onDelete}) {
+  const handleGross = v => { const net = v ? Math.round(Number(v) * 0.9) : ""; const psf = net && layout.sizeSqft ? Math.round(net / Number(layout.sizeSqft)) : ""; onChange({ ...layout, grossPrice: v, netPrice: net ? String(net) : "", psf: psf ? String(psf) : "" }); };
+  const handleSize = v => { const psf = layout.netPrice && v ? Math.round(Number(layout.netPrice) / Number(v)) : ""; onChange({ ...layout, sizeSqft: v, psf: psf ? String(psf) : "" }); };
+  const handleNet = v => { const psf = v && layout.sizeSqft ? Math.round(Number(v) / Number(layout.sizeSqft)) : ""; onChange({ ...layout, netPrice: v, psf: psf ? String(psf) : "" }); };
+  const cellStyle = (color, ro) => ({ width: "100%", minWidth: ro ? 60 : 72, background: ro ? "#111" : "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 4, padding: "7px 8px", fontSize: 11, color: color || "var(--text)", fontFamily: "'DM Mono',monospace", outline: "none" });
+  return React.createElement("tr", { style: { borderBottom: "1px solid #111" } },
+    [[layout.name, v => onChange({...layout, name: v}), "A1", null, false],
+     [layout.beds, v => onChange({...layout, beds: v}), "3", null, false],
+     [layout.baths, v => onChange({...layout, baths: v}), "2", null, false],
+     [layout.sizeSqft, handleSize, "1200", null, false],
+     [layout.grossPrice, handleGross, "650000", "var(--gold-light)", false],
+     [layout.netPrice, handleNet, "auto-calc", "var(--green-bright)", false],
+     [layout.psf, null, "auto", "var(--text3)", true]
+    ].map(([val, fn, ph, color, ro], i) =>
+      React.createElement("td", { key: i, style: { padding: "4px 4px" } },
+        React.createElement("input", { value: val || "", placeholder: ph, readOnly: ro, onChange: e => fn && fn(e.target.value), style: cellStyle(color, ro) })
+      )
+    ),
+    React.createElement("td", { style: { padding: "4px 4px" } },
+      React.createElement("button", { onClick: onDelete, className: "btn-red", style: { padding: "6px 10px", fontSize: 11 } }, "✕")
+    )
+  );
+}
+
+function ImageUploader({images, onChange}) {
+  const ref = useRef();
+  const handle = async files => {
+    const newImgs = [];
+    for (const f of Array.from(files)) {
+      if (!f.type.startsWith("image/")) continue;
+      const b64 = await toBase64(f);
+      newImgs.push({ id: uid(), base64: b64, name: f.name });
+    }
+    onChange([...images, ...newImgs]);
+  };
+  return React.createElement("div", null,
+    React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 } },
+      images.map(img => React.createElement("div", { key: img.id, style: { position: "relative" } },
+        React.createElement("img", { src: img.base64, style: { width: 90, height: 68, objectFit: "cover", borderRadius: 5, border: "1px solid var(--border2)", display: "block" } }),
+        React.createElement("button", { onClick: () => onChange(images.filter(i => i.id !== img.id)), style: { position: "absolute", top: -5, right: -5, background: "#5a1818", border: "none", color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" } }, "✕")
+      )),
+      React.createElement("div", { onClick: () => ref.current.click(), style: { width: 90, height: 68, border: "2px dashed var(--border2)", borderRadius: 5, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text4)", fontSize: 20, gap: 4, userSelect: "none" } },
+        React.createElement("span", null, "+"),
+        React.createElement("span", { style: { fontSize: 9, letterSpacing: 1 } }, "IMAGE")
+      )
+    ),
+    React.createElement("input", { ref, type: "file", accept: "image/*", multiple: true, hidden: true, onChange: e => { handle(e.target.files); e.target.value = ""; } }),
+    React.createElement("div", { style: { fontSize: 10, color: "var(--text4)", fontFamily: "'DM Mono',monospace" } }, images.length, " image", images.length !== 1 ? "s" : "", " added · max 8 exported to report")
+  );
+}
+
+function ComparisonOverlay({projects, onClose, onDownload}) {
+  const allBeds = [...new Set(projects.flatMap(p => (p.layouts || []).map(l => l.beds).filter(Boolean)))].sort((a, b) => Number(a) - Number(b));
+  const Col = projects.length;
+  const infoRows = [
+    { label: "📍 Location", get: p => p.location || "—" },
+    { label: "🏙 Nearest Centre", get: p => p.nearestCity || "—" },
+    { label: "📏 Distance", get: p => p.distanceFromCity || "—" },
+    { label: "📅 Launch", get: p => p.launchDate || "—" },
+    { label: "🏗 Completion", get: p => p.completionDate || "—" },
+    { label: "🔑 Tenure", get: p => p.tenure || "—" },
+    { label: "🏢 Units", get: p => p.totalUnits ? fmt(p.totalUnits) + " units" : "—" },
+    { label: "🅿 Car Parks", get: p => p.carParks || "—" },
+    { label: "🔧 Maintenance", get: p => p.maintenanceFee || "—" },
+    { label: "🇲🇾 Bumi Disc.", get: p => p.bumiDiscount || "—" },
+    { label: "💰 Cash Back", get: p => p.cashBack ? React.createElement("span", { style: { color: "var(--green-bright)", fontWeight: 700 } }, "✓ ", p.cashBackDetails || "Yes") : React.createElement("span", { style: { color: "var(--text4)" } }, "No") }
+  ];
+  const tdStyle = { padding: "9px 14px", fontSize: 11, borderRight: "1px solid #111", fontFamily: "'DM Mono',monospace", color: "var(--text2)" };
+  return React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.96)", zIndex: 1000, overflowY: "auto", padding: "20px 0" } },
+    React.createElement("div", { style: { maxWidth: 1200, margin: "0 auto", padding: "0 20px" } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 } },
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontSize: 24, fontWeight: 800, color: "var(--gold)", letterSpacing: -0.5 } }, "Side-by-Side Comparison"),
+          React.createElement("div", { style: { fontSize: 11, color: "var(--text4)", marginTop: 2, fontFamily: "'DM Mono',monospace" } }, Col, " projects · ", allBeds.length, " bedroom types")
+        ),
+        React.createElement("div", { style: { display: "flex", gap: 10 } },
+          React.createElement("button", { onClick: onDownload, className: "btn-gold" }, "⬇ Download Report"),
+          React.createElement("button", { onClick: onClose, className: "btn-ghost" }, "✕ Close")
+        )
+      ),
+      React.createElement("div", { style: { display: "grid", gridTemplateColumns: `180px repeat(${Col},1fr)`, background: "var(--bg1)", border: "1px solid var(--border)", borderRadius: "10px 10px 0 0", overflow: "hidden" } },
+        React.createElement("div", { style: { padding: "14px 16px", background: "#0a0a0a", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center" } },
+          React.createElement("span", { style: { fontSize: 9, color: "var(--text4)", textTransform: "uppercase", letterSpacing: 2, fontWeight: 700 } }, "Project")
+        ),
+        projects.map((p, i) => {
+          const nets = (p.layouts || []).filter(l => l.netPrice).map(l => Number(l.netPrice));
+          const minN = nets.length ? Math.min(...nets) : null;
+          const maxN = nets.length ? Math.max(...nets) : null;
+          return React.createElement("div", { key: p.id, style: { padding: "14px 16px", background: "var(--bg1)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border)" } },
+            p.images?.[0] && React.createElement("img", { src: p.images[0].base64, style: { width: "100%", height: 72, objectFit: "cover", borderRadius: 5, marginBottom: 10, border: "1px solid var(--border)" } }),
+            React.createElement("div", { style: { fontSize: 9, color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 3, fontFamily: "'DM Mono',monospace" } }, "#", String(i + 1).padStart(2, "0")),
+            React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: "var(--text)", marginBottom: 2 } }, p.name || "Unnamed"),
+            React.createElement("div", { style: { fontSize: 10, color: "var(--text3)", marginBottom: 6 } }, p.developer || ""),
+            minN && React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: "var(--green-bright)", fontFamily: "'DM Mono',monospace" } }, minN === maxN ? fmtRM(minN) : `${fmtRM(minN)} – ${fmtRM(maxN)}`)
+          );
+        })
+      ),
+      React.createElement("div", { style: { border: "1px solid var(--border)", borderTop: "none" } },
+        infoRows.map((row, ri) =>
+          React.createElement("div", { key: ri, style: { display: "grid", gridTemplateColumns: `180px repeat(${Col},1fr)`, background: ri % 2 === 0 ? "#0a0a0a" : "var(--bg1)", borderBottom: "1px solid #111" } },
+            React.createElement("div", { style: { padding: "9px 14px", fontSize: 10, color: "var(--text4)", fontWeight: 700, borderRight: "1px solid #111", letterSpacing: 0.5 } }, row.label),
+            projects.map(p => React.createElement("div", { key: p.id, style: tdStyle }, row.get(p)))
+          )
+        )
+      ),
+      allBeds.map(bed =>
+        React.createElement("div", { key: bed, style: { border: "1px solid var(--border)", borderTop: "none", overflow: "hidden" } },
+          React.createElement("div", { style: { background: "#0a1a0a", padding: "10px 16px", fontSize: 10, color: "var(--green-bright)", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", borderBottom: "1px solid #1a3a1a" } }, "🛏 ", bed, " Bedroom Layouts"),
+          React.createElement("div", { style: { overflowX: "auto" } },
+            React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 11 } },
+              React.createElement("thead", null,
+                React.createElement("tr", { style: { background: "#0a0a0a", borderBottom: "1px solid #1a1a1a" } },
+                  [["Project","left","var(--text4)"],["Type","left","var(--text4)"],["Bath","center","var(--text4)"],["Size (sf)","right","var(--text4)"],["⚠ Gross","right","var(--gold-light)"],["✓ Net","right","var(--green-bright)"],["PSF","right","var(--text4)"]].map(([h,a,c], i) =>
+                    React.createElement("th", { key: i, style: { padding: "9px 12px", textAlign: a, color: c, fontWeight: 600, fontSize: 9, textTransform: "uppercase", letterSpacing: 1, whiteSpace: "nowrap", fontFamily: "'DM Mono',monospace" } }, h)
+                  )
+                )
+              ),
+              React.createElement("tbody", null,
+                projects.flatMap(p => (p.layouts || []).filter(l => l.beds === bed).map((l, li) =>
+                  React.createElement("tr", { key: l.id, style: { borderBottom: "1px solid #111", background: li % 2 === 0 ? "var(--bg1)" : "#0a0a0a" } },
+                    React.createElement("td", { style: { padding: "9px 12px", color: "var(--gold)", fontWeight: 700, fontSize: 10, fontFamily: "'DM Mono',monospace", whiteSpace: "nowrap" } }, p.name || "—"),
+                    React.createElement("td", { style: { padding: "9px 12px", color: "var(--text)", fontWeight: 700, fontFamily: "'DM Mono',monospace" } }, l.name || "—"),
+                    React.createElement("td", { style: { padding: "9px 10px", textAlign: "center", color: "var(--text3)", fontFamily: "'DM Mono',monospace" } }, l.baths || "—"),
+                    React.createElement("td", { style: { padding: "9px 10px", textAlign: "right", color: "var(--text3)", fontFamily: "'DM Mono',monospace" } }, l.sizeSqft ? fmt(l.sizeSqft) : "—"),
+                    React.createElement("td", { style: { padding: "9px 10px", textAlign: "right", color: "var(--gold-light)", fontWeight: 700, background: "#1a1800", fontFamily: "'DM Mono',monospace" } }, l.grossPrice ? fmtRM(l.grossPrice) : "—"),
+                    React.createElement("td", { style: { padding: "9px 10px", textAlign: "right", color: "var(--green-bright)", fontWeight: 700, background: "#0a1400", fontFamily: "'DM Mono',monospace" } }, l.netPrice ? fmtRM(l.netPrice) : "—"),
+                    React.createElement("td", { style: { padding: "9px 10px", textAlign: "right", color: "var(--text4)", fontFamily: "'DM Mono',monospace" } }, l.psf ? "RM " + fmt(l.psf) : "—")
+                  )
+                ))
+              )
+            )
+          )
+        )
+      ),
+      React.createElement("div", { style: { border: "1px solid var(--border)", borderTop: "none", borderRadius: "0 0 10px 10px", background: "#050505", padding: "12px 18px", fontSize: 9, color: "var(--text4)", textAlign: "center", letterSpacing: 1, fontFamily: "'DM Mono',monospace" } },
+        "⚠ ESTIMATES ONLY · INTERNAL USE · Net ≈ 90% of Gross unless stated · PSF = Net ÷ Built-up sf · Verify with developer"
+      )
+    )
+  );
+}
+
+function ProjectCard({project, onEdit, onDelete, index}) {
+  const beds = [...new Set((project.layouts || []).map(l => l.beds).filter(Boolean))].sort((a, b) => Number(a) - Number(b));
+  const nets = (project.layouts || []).filter(l => l.netPrice).map(l => Number(l.netPrice));
+  const minN = nets.length ? Math.min(...nets) : null;
+  const maxN = nets.length ? Math.max(...nets) : null;
+  const [hover, setHover] = useState(false);
+  return React.createElement("div", { className: "fade-up", style: { background: "var(--bg1)", border: `1px solid ${hover ? "#2a2a2a" : "var(--border)"}`, borderRadius: 10, overflow: "hidden", transition: "all 0.2s", transform: hover ? "translateY(-2px)" : "none", boxShadow: hover ? "0 8px 32px rgba(0,0,0,0.4)" : "none" }, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false) },
+    project.images?.[0] ? React.createElement("img", { src: project.images[0].base64, style: { width: "100%", height: 140, objectFit: "cover", display: "block", borderBottom: "1px solid var(--border)" } }) : React.createElement("div", { style: { height: 80, background: "var(--bg2)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--bg4)", fontSize: 32, borderBottom: "1px solid var(--border)" } }, "🏗"),
+    React.createElement("div", { style: { padding: "16px" } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 } },
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontSize: 9, color: "var(--gold)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, fontFamily: "'DM Mono',monospace" } }, "#", String(index + 1).padStart(2, "0"), " · ", project.developer || "Developer TBC"),
+          React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: "var(--text)", lineHeight: 1.2 } }, project.name || "Unnamed Project")
+        ),
+        project.cashBack && React.createElement("div", { style: { background: "#0f1f0f", border: "1px solid #2d5a40", borderRadius: 4, padding: "2px 8px", fontSize: 9, color: "var(--green-bright)", fontWeight: 700, flexShrink: 0, marginLeft: 8 } }, "✓ CB")
+      ),
+      project.location && React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", marginBottom: 4, fontFamily: "'DM Mono',monospace" } }, "📍 ", project.location.length > 45 ? project.location.slice(0, 45) + "…" : project.location),
+      project.nearestCity && React.createElement("div", { style: { fontSize: 11, color: "var(--text3)", marginBottom: 8, fontFamily: "'DM Mono',monospace" } }, "🏙 ", project.distanceFromCity, " · ", project.nearestCity),
+      React.createElement("div", { style: { display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 10 } },
+        beds.map(b => React.createElement("span", { key: b, style: { background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 4, padding: "2px 8px", fontSize: 9, color: "var(--text3)", fontFamily: "'DM Mono',monospace" } }, b, "BR")),
+        project.tenure && React.createElement("span", { style: { background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 4, padding: "2px 8px", fontSize: 9, color: "var(--text3)", fontFamily: "'DM Mono',monospace" } }, project.tenure),
+        project.completionDate && React.createElement("span", { style: { background: "var(--bg3)", border: "1px solid var(--border2)", borderRadius: 4, padding: "2px 8px", fontSize: 9, color: "var(--text3)", fontFamily: "'DM Mono',monospace" } }, project.completionDate)
+      ),
+      minN && React.createElement("div", { style: { marginBottom: 12, paddingTop: 10, borderTop: "1px solid var(--border)" } },
+        React.createElement("div", { style: { fontSize: 9, color: "var(--text4)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 3, fontFamily: "'DM Mono',monospace" } }, "Est. Net Price"),
+        React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: "var(--green-bright)", fontFamily: "'DM Mono',monospace" } }, minN === maxN ? fmtRM(minN) : `${fmtRM(minN)} – ${fmtRM(maxN)}`)
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 8 } },
+        React.createElement("button", { onClick: onEdit, className: "btn-green", style: { flex: 1, fontSize: 11 } }, "✏ Edit"),
+        React.createElement("button", { onClick: onDelete, className: "btn-red", style: { fontSize: 11 } }, "🗑")
+      )
+    )
+  );
+}
+
+function exportData(projects) {
+  const json = JSON.stringify(projects, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `PropCompare_data_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function App() {
+  const [projects, setProjects] = useState(() => load());
+  const [editing, setEditing] = useState(null);
+  const [view, setView] = useState("dashboard");
+  const [showComparison, setShowComparison] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("");
+  const [toast, setToast] = useState(null);
+  const [filterBed, setFilterBed] = useState("all");
+  const [searchQ, setSearchQ] = useState("");
+  const pdfRef = useRef();
+  const importRef = useRef();
+
+  useEffect(() => { save(projects); }, [projects]);
+
+  const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 4000); };
+  const cur = editing ? projects.find(p => p.id === editing) : null;
+
+  const openNew = () => {
+    const p = { ...EMPTY_PROJECT, id: uid(), layouts: [{ ...EMPTY_LAYOUT, id: uid() }], images: [], pdfSources: [], createdAt: new Date().toISOString() };
+    setProjects(prev => [...prev, p]);
+    setEditing(p.id);
+    setView("form");
+  };
+  const openEdit = id => { setEditing(id); setView("form"); };
+  const deleteProject = id => {
+    if (!confirm("Delete this project?")) return;
+    setProjects(prev => prev.filter(p => p.id !== id));
+    if (editing === id) { setEditing(null); setView("dashboard"); }
+    showToast("Project deleted");
+  };
+  const updateField = (field, value) => setProjects(prev => prev.map(p => p.id === editing ? { ...p, [field]: value, updatedAt: new Date().toISOString() } : p));
+  const updateLayout = (lid, updated) => setProjects(prev => prev.map(p => p.id === editing ? { ...p, layouts: p.layouts.map(l => l.id === lid ? updated : l) } : p));
+  const addLayout = () => setProjects(prev => prev.map(p => p.id === editing ? { ...p, layouts: [...p.layouts, { ...EMPTY_LAYOUT, id: uid() }] } : p));
+  const deleteLayout = lid => setProjects(prev => prev.map(p => p.id === editing ? { ...p, layouts: p.layouts.filter(l => l.id !== lid) } : p));
+
+  const handlePDFUpload = async e => {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      if (cur?.pdfSources?.includes(file.name)) { showToast(`"${file.name}" already processed`, "warn"); continue; }
+      setLoading(true);
+      setLoadingMsg(`AI reading "${file.name}"…`);
+      try {
+        const b64 = await toBase64(file);
+        const extracted = await extractFromPDF(b64);
+        setProjects(prev => prev.map(p => {
+          if (p.id !== editing) return p;
+          const m = { ...p };
+          ["name","developer","location","district","state","nearestCity","distanceFromCity","launchDate","completionDate","tenure","cashBackDetails","maintenanceFee","carParks","totalUnits","floors","notes","bumiDiscount"].forEach(f => { if (m[f] === "" && extracted[f] !== undefined) m[f] = extracted[f]; });
+          if (extracted.cashBack !== undefined && !m.cashBack) m.cashBack = extracted.cashBack;
+          if (extracted.layouts?.length) {
+            m.layouts = extracted.layouts.map(l => {
+              const gross = l.grossPrice ? Number(l.grossPrice) : null;
+              const net = l.netPrice ? Number(l.netPrice) : gross ? Math.round(gross * 0.9) : null;
+              const size = l.sizeSqft ? Number(l.sizeSqft) : null;
+              const psf = net && size ? Math.round(net / size) : l.psf ? Number(l.psf) : null;
+              return { id: uid(), name: l.name || "", beds: String(l.beds || ""), baths: String(l.baths || ""), sizeSqft: size ? String(size) : "", grossPrice: gross ? String(gross) : "", netPrice: net ? String(net) : "", psf: psf ? String(psf) : "" };
+            });
+          }
+          m.pdfSources = [...(p.pdfSources || []), file.name];
+          m.updatedAt = new Date().toISOString();
+          return m;
+        }));
+        showToast(`✓ "${file.name}" extracted successfully`);
+      } catch (err) {
+        showToast(`Error: ${err.message}`, "error");
+      } finally {
+        setLoading(false);
+        setLoadingMsg("");
+      }
+    }
+    e.target.value = "";
+  };
+
+  const handleImport = async e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error("Invalid format");
+      if (!confirm(`Import ${data.length} project(s)? This will ADD to existing projects.`)) return;
+      setProjects(prev => [...prev, ...data]);
+      showToast(`Imported ${data.length} project(s)`);
+    } catch (err) { showToast("Import failed: " + err.message, "error"); }
+    e.target.value = "";
+  };
+
+  const doDownload = projs => {
+    const html = buildReportHTML(projs);
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const name = projs.length === 1 ? (projs[0].name || "project").replace(/[^a-z0-9]/gi, "_").toLowerCase() : "all_projects";
+    a.href = url;
+    a.download = `PropCompare_${name}_${new Date().toISOString().slice(0, 10)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast("Report downloaded — open file and press Ctrl+P to save as PDF");
+  };
+
+  const closeForm = () => { setEditing(null); setView("dashboard"); };
+  const allBedFilters = ["all", ...[...new Set(projects.flatMap(p => (p.layouts || []).map(l => l.beds).filter(Boolean)))].sort((a, b) => Number(a) - Number(b))];
+  const filteredProjects = projects.filter(p => {
+    const q = searchQ.toLowerCase();
+    const matchQ = !q || [p.name, p.developer, p.location, p.nearestCity].some(f => (f || "").toLowerCase().includes(q));
+    const matchBed = filterBed === "all" || (p.layouts || []).some(l => l.beds === filterBed);
+    return matchQ && matchBed;
+  });
+
+  return React.createElement("div", { style: { minHeight: "100vh", background: "var(--bg)" } },
+    React.createElement("nav", { style: { background: "var(--bg1)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 500 } },
+      React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 16 } },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+          React.createElement("span", { style: { fontSize: 18 } }, "🏗"),
+          React.createElement("div", null,
+            React.createElement("div", { style: { fontSize: 15, fontWeight: 800, color: "var(--gold)", letterSpacing: -0.5, lineHeight: 1 } }, "PropCompare"),
+            React.createElement("div", { style: { fontSize: 8, color: "var(--text4)", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'DM Mono',monospace", lineHeight: 1 } }, "Internal Analysis Tool")
+          )
+        ),
+        view === "dashboard" && projects.length > 0 && React.createElement("div", { style: { display: "flex", gap: 6 } },
+          React.createElement("button", { onClick: () => setShowComparison(true), style: { background: "var(--blue-dim)", border: "1px solid #2a2a5a", color: "var(--blue)", borderRadius: 5, padding: "5px 14px", fontSize: 11, fontWeight: 600 } }, "📊 Compare"),
+          React.createElement("button", { onClick: () => doDownload(projects), className: "btn-green", style: { fontSize: 11, padding: "5px 14px" } }, "⬇ All Report")
+        )
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+        view === "dashboard" && React.createElement(React.Fragment, null,
+          React.createElement("button", { onClick: () => importRef.current.click(), className: "btn-ghost", style: { fontSize: 11, padding: "5px 12px" } }, "⬆ Import"),
+          projects.length > 0 && React.createElement("button", { onClick: () => exportData(projects), className: "btn-ghost", style: { fontSize: 11, padding: "5px 12px" } }, "⬇ Export Data"),
+          React.createElement("input", { ref: importRef, type: "file", accept: ".json", hidden: true, onChange: handleImport })
+        ),
+        view === "dashboard" && React.createElement("button", { onClick: openNew, className: "btn-gold" }, "+ New Project"),
+        view === "form" && React.createElement("button", { onClick: closeForm, className: "btn-ghost", style: { fontSize: 11, padding: "5px 12px" } }, "← Dashboard")
+      )
+    ),
+    toast && React.createElement("div", { style: { position: "fixed", bottom: 24, right: 24, zIndex: 9999, background: toast.type === "error" ? "#2a0808" : toast.type === "warn" ? "#1a1800" : "#081a0f", border: `1px solid ${toast.type === "error" ? "#5a1818" : toast.type === "warn" ? "#5a4800" : "#1a5a30"}`, color: toast.type === "error" ? "var(--red)" : toast.type === "warn" ? "var(--gold)" : "var(--green-bright)", padding: "12px 20px", borderRadius: 8, fontSize: 12, fontWeight: 600, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", maxWidth: 380, lineHeight: 1.5, fontFamily: "'DM Mono',monospace", animation: "fadeUp 0.2s ease" } }, toast.msg),
+    loading && React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 9000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18 } },
+      React.createElement("div", { style: { width: 48, height: 48, border: "3px solid var(--border2)", borderTop: "3px solid var(--gold)", borderRadius: "50%", animation: "spin 0.8s linear infinite" } }),
+      React.createElement("div", { style: { color: "var(--gold)", fontSize: 14, fontWeight: 600, fontFamily: "'DM Mono',monospace" } }, loadingMsg),
+      React.createElement("div", { style: { color: "var(--text4)", fontSize: 11, fontFamily: "'DM Mono',monospace", animation: "pulse 1.5s ease infinite" } }, "Reading PDF with AI…")
+    ),
+    showComparison && React.createElement(ComparisonOverlay, { projects, onClose: () => setShowComparison(false), onDownload: () => { setShowComparison(false); doDownload(projects); } }),
+    view === "dashboard" && React.createElement("div", { style: { padding: "24px", maxWidth: 1240, margin: "0 auto" } },
+      projects.length === 0
+        ? React.createElement("div", { style: { textAlign: "center", padding: "90px 0" } },
+            React.createElement("div", { style: { fontSize: 60, marginBottom: 20, opacity: 0.3 } }, "🏗"),
+            React.createElement("div", { style: { fontSize: 26, fontWeight: 800, color: "var(--gold)", marginBottom: 8, letterSpacing: -0.5 } }, "No Projects Yet"),
+            React.createElement("div", { style: { color: "var(--text4)", marginBottom: 28, fontSize: 13, fontFamily: "'DM Mono',monospace" } }, "Add your first property project to begin analysis."),
+            React.createElement("button", { onClick: openNew, className: "btn-gold", style: { fontSize: 13, padding: "12px 32px" } }, "+ Add First Project")
+          )
+        : React.createElement(React.Fragment, null,
+            React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" } },
+              [["Projects", projects.length], ["Layouts", projects.reduce((a, p) => a + (p.layouts || []).length, 0)], ["Freehold", projects.filter(p => p.tenure === "Freehold").length], ["Cash Back", projects.filter(p => p.cashBack).length]].map(([label, val]) =>
+                React.createElement("div", { key: label, style: { background: "var(--bg1)", border: "1px solid var(--border)", borderRadius: 8, padding: "12px 18px", minWidth: 110 } },
+                  React.createElement("div", { style: { fontSize: 9, color: "var(--text4)", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4, fontFamily: "'DM Mono',monospace" } }, label),
+                  React.createElement("div", { style: { fontSize: 22, fontWeight: 800, color: "var(--gold)" } }, val)
+                )
+              )
+            ),
+            React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } },
+              React.createElement("input", { value: searchQ, onChange: e => setSearchQ(e.target.value), placeholder: "Search projects…", style: { width: 240, background: "var(--bg2)", borderColor: "var(--border)", fontSize: 12 } }),
+              React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
+                allBedFilters.map(b => React.createElement("button", { key: b, onClick: () => setFilterBed(b), style: { background: filterBed === b ? "var(--gold)" : "var(--bg2)", color: filterBed === b ? "#000" : "var(--text3)", border: `1px solid ${filterBed === b ? "var(--gold)" : "var(--border2)"}`, borderRadius: 5, padding: "6px 12px", fontSize: 11, fontWeight: filterBed === b ? 700 : 400, fontFamily: "'DM Mono',monospace" } }, b === "all" ? "All Beds" : `${b}BR`))
+              ),
+              React.createElement("div", { style: { marginLeft: "auto", fontSize: 11, color: "var(--text4)", fontFamily: "'DM Mono',monospace" } }, filteredProjects.length, "/", projects.length, " shown")
+            ),
+            React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 16 } },
+              filteredProjects.map((p, i) => React.createElement(ProjectCard, { key: p.id, project: p, index: projects.indexOf(p), onEdit: () => openEdit(p.id), onDelete: () => deleteProject(p.id) }))
+            )
+          )
+    ),
+    view === "form" && cur && React.createElement("div", { style: { maxWidth: 980, margin: "0 auto", padding: "24px 20px 60px" } },
+      React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22, flexWrap: "wrap", gap: 12 } },
+        React.createElement("div", null,
+          React.createElement("div", { style: { fontSize: 20, fontWeight: 800, color: "var(--gold)", letterSpacing: -0.5 } }, cur.name || "New Project"),
+          React.createElement("div", { style: { fontSize: 10, color: "var(--text4)", marginTop: 3, fontFamily: "'DM Mono',monospace" } }, cur.updatedAt ? `Last updated ${new Date(cur.updatedAt).toLocaleString("en-MY")}` : "Not yet saved")
+        ),
+        React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+          React.createElement("button", { onClick: () => doDownload([cur]), className: "btn-green", style: { fontSize: 11 } }, "⬇ Report"),
+          React.createElement("button", { onClick: () => deleteProject(editing), className: "btn-red", style: { fontSize: 11 } }, "🗑 Delete"),
+          React.createElement("button", { onClick: closeForm, className: "btn-ghost", style: { fontSize: 11 } }, "✕ Close")
+        )
+      ),
+      React.createElement("div", { style: { background: "var(--bg1)", border: "1px dashed var(--gold)", borderRadius: 10, padding: 18, marginBottom: 16 } },
+        React.createElement("div", { style: { fontSize: 11, fontWeight: 700, color: "var(--gold)", marginBottom: 4 } }, "🤖 AI Auto-Fill from PDF Brochure"),
+        React.createElement("div", { style: { fontSize: 11, color: "var(--text4)", marginBottom: 12, fontFamily: "'DM Mono',monospace", lineHeight: 1.6 } }, "Upload developer price list or brochure PDFs. AI extracts all layouts, pricing, and project details automatically."),
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" } },
+          React.createElement("input", { ref: pdfRef, type: "file", accept: ".pdf", multiple: true, hidden: true, onChange: handlePDFUpload }),
+          React.createElement("button", { onClick: () => pdfRef.current.click(), style: { background: "#1a1800", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 5, padding: "8px 18px", fontSize: 12, fontWeight: 600, cursor: "pointer" } }, "📄 Upload PDF(s)"),
+          cur.pdfSources?.length > 0 && React.createElement("div", { style: { fontSize: 10, color: "var(--text4)", fontFamily: "'DM Mono',monospace" } }, "✓ Processed: ", cur.pdfSources.join(", "))
+        )
+      ),
+      React.createElement("div", { className: "section-card" },
+        React.createElement("div", { className: "section-label" }, "📌 Project Information"),
+        React.createElement("div", { className: "grid-2", style: { marginBottom: 14 } },
+          [["Project Name *","name","e.g. Residensi Embun"],["Developer","developer","e.g. Mah Sing Group"],["Full Address","location","e.g. Jalan Utama, Puchong"],["District","district","e.g. Petaling Jaya"],["State","state","e.g. Selangor"],["Nearest LRT/City Centre","nearestCity","e.g. Puchong Town Centre"],["Distance to Centre","distanceFromCity","e.g. 3.5 km"],["Bumi Lot Discount","bumiDiscount","e.g. 5%"]].map(([label, field, ph]) =>
+            React.createElement("div", { key: field },
+              React.createElement("div", { className: "field-label" }, label),
+              React.createElement("input", { value: cur[field] || "", placeholder: ph, onChange: e => updateField(field, e.target.value) })
+            )
+          )
+        ),
+        React.createElement("div", { className: "grid-3", style: { marginBottom: 14 } },
+          [["Launch Date","launchDate","e.g. Jan 2024"],["Est. Completion","completionDate","e.g. Q4 2026"],["Total Units","totalUnits","e.g. 350"],["No. of Floors","floors","e.g. 28"],["Car Parks per Unit","carParks","e.g. 2"],["Maintenance Fee","maintenanceFee","e.g. RM 0.35/sf"]].map(([label, field, ph]) =>
+            React.createElement("div", { key: field },
+              React.createElement("div", { className: "field-label" }, label),
+              React.createElement("input", { value: cur[field] || "", placeholder: ph, onChange: e => updateField(field, e.target.value) })
+            )
+          )
+        ),
+        React.createElement("div", null,
+          React.createElement("div", { className: "field-label" }, "Tenure"),
+          React.createElement("select", { value: cur.tenure || "Freehold", onChange: e => updateField("tenure", e.target.value), style: { width: "auto", minWidth: 160 } },
+            React.createElement("option", null, "Freehold"),
+            React.createElement("option", null, "Leasehold"),
+            React.createElement("option", null, "Leasehold 99yr"),
+            React.createElement("option", null, "Leasehold 999yr")
+          ),
+          React.createElement("div", { style: { marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" } },
+            React.createElement(Toggle, { value: cur.cashBack, onChange: v => updateField("cashBack", v), label: "No Cash Back", activeLabel: "Cash Back Package" }),
+            cur.cashBack && React.createElement("div", { style: { flex: 1, minWidth: 200 } },
+              React.createElement("input", { value: cur.cashBackDetails || "", placeholder: "e.g. 10% rebate on SPA price", onChange: e => updateField("cashBackDetails", e.target.value) })
+            )
+          )
+        )
+      ),
+      React.createElement("div", { className: "section-card" },
+        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 } },
+          React.createElement("div", null,
+            React.createElement("div", { className: "section-label", style: { marginBottom: 4 } }, "🏠 Unit Layouts & Pricing"),
+            React.createElement("div", { style: { fontSize: 10, color: "var(--text4)", fontFamily: "'DM Mono',monospace" } }, "Net auto-calculates as 90% of Gross · PSF = Net ÷ Size")
+          ),
+          React.createElement("button", { onClick: addLayout, className: "btn-green", style: { fontSize: 11, padding: "7px 14px" } }, "+ Add Layout")
+        ),
+        React.createElement("div", { style: { overflowX: "auto" } },
+          React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", minWidth: 620 } },
+            React.createElement("thead", null,
+              React.createElement("tr", { style: { borderBottom: "1px solid var(--border2)" } },
+                [["Type Code","left","var(--text4)"],["Beds","left","var(--text4)"],["Baths","left","var(--text4)"],["Size (sf)","left","var(--text4)"],["⚠ Gross (RM)","left","var(--gold-light)"],["✓ Net (RM)","left","var(--green-bright)"],["PSF","left","var(--text4)"],["","",""]].map(([h,a,c], i) =>
+                  React.createElement("th", { key: i, style: { padding: "8px 4px", textAlign: a, fontSize: 9, color: c, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" } }, h)
+                )
+              )
+            ),
+            React.createElement("tbody", null,
+              (cur.layouts || []).map(l => React.createElement(LayoutRow, { key: l.id, layout: l, onChange: u => updateLayout(l.id, u), onDelete: () => deleteLayout(l.id) }))
+            )
+          )
+        ),
+        React.createElement("div", { style: { marginTop: 10, display: "flex", gap: 24, fontSize: 10, fontFamily: "'DM Mono',monospace" } },
+          React.createElement("span", { style: { color: "var(--gold-light)" } }, "⚠ Gross = pre-discount listing price"),
+          React.createElement("span", { style: { color: "var(--green-bright)" } }, "✓ Net = buyer effective price")
+        )
+      ),
+      React.createElement("div", { className: "section-card" },
+        React.createElement("div", { className: "section-label" }, "🖼 Project Images"),
+        React.createElement("div", { style: { fontSize: 11, color: "var(--text4)", marginBottom: 14, fontFamily: "'DM Mono',monospace" } }, "Upload renders, floor plans, location maps. First image shows as card thumbnail."),
+        React.createElement(ImageUploader, { images: cur.images || [], onChange: imgs => updateField("images", imgs) })
+      ),
+      React.createElement("div", { className: "section-card" },
+        React.createElement("div", { className: "section-label" }, "📝 Notes"),
+        React.createElement("textarea", { value: cur.notes || "", onChange: e => updateField("notes", e.target.value), rows: 4, placeholder: "Amenities, facilities, financing packages, agent remarks…", style: { resize: "vertical", fontFamily: "'DM Mono',monospace", fontSize: 12, lineHeight: 1.6 } })
+      ),
+      React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "flex-end" } },
+        React.createElement("button", { onClick: () => doDownload([cur]), className: "btn-green" }, "⬇ Download This Report"),
+        React.createElement("button", { onClick: closeForm, className: "btn-ghost" }, "← Back to Dashboard")
+      )
+    )
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App, null));
+</script>
+
+<script>
+let deferredPrompt;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredPrompt = e; const banner = document.getElementById("install-banner"); if (banner) banner.style.display = "block"; });
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("install-btn");
+  const dismiss = document.getElementById("install-dismiss");
+  const banner = document.getElementById("install-banner");
+  if (btn) btn.addEventListener("click", async () => { if (deferredPrompt) { deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; } if (banner) banner.style.display = "none"; });
+  if (dismiss) dismiss.addEventListener("click", () => { if (banner) banner.style.display = "none"; });
+});
+</script>
+</body>
+</html>
